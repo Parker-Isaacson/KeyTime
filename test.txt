@@ -1,0 +1,9 @@
+macro 0
+ tap R
+ press W
+ sleep 5000
+ press D
+ sleep 500
+ press S
+ sleep 100
+ unpress WAS
