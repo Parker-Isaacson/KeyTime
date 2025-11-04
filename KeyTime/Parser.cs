@@ -27,9 +27,11 @@ namespace KeyTime
     public class Parser
     {
         private Dictionary<String, Action> macros = new Dictionary<String, Action>();
+        private Dictionary<String, String> vars = new Dictionary<String, String>();
         private Stack<String> tokens = new Stack<String>();
         private HashSet<byte> pressed = new HashSet<byte>();
         private String currentMacro = String.Empty;
+
         public Parser(Data formData)
         {
             String? text = formData.GetFileText();
@@ -51,11 +53,11 @@ namespace KeyTime
                     continue;
                 }
 
-                // String Constant, in [a-zA-z]
-                if (Char.IsLetter(text[i]))
+                // String Constant, in [a-zA-z\_\-\:]
+                if (Char.IsLetter(text[i]) || text[i] == '_' || text[i] == '-' || text[i] == ':' || text[i] == '$')
                 {
                     String buffer = String.Empty;
-                    while (i < text.Length && Char.IsLetter(text[i]))
+                    while (i < text.Length && (Char.IsLetter(text[i]) || text[i] == '_' || text[i] == '-' || text[i] == ':' || text[i] == '$'))
                     {
                         buffer += text[i];
                         i++;
@@ -88,12 +90,6 @@ namespace KeyTime
                     }
                 }
 
-                // Consme newline
-                /*if (text[i] == '\n')
-                {
-                    continue;
-                }*/
-
                 // User gave something bad
                 throw new ParseException($"Error, bad char \'{text[i]}\'.");
             }
@@ -124,6 +120,18 @@ namespace KeyTime
             {
                 String param = tokens.Pop().ToLower();
                 String op = tokens.Pop().ToLower();
+                
+                // We need to do a var check on op and change it just in case
+                if (op.EndsWith(":"))
+                {
+                    vars[op.Substring(0, op.Length - 1)] = param;
+                    return;
+                }
+
+                if (param.StartsWith("$"))
+                {
+                    param = vars[param.Substring(1)];
+                }
 
                 switch (op)
                 {

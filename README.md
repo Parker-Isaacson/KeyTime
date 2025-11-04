@@ -2,10 +2,6 @@
 
 KeyTime is a timeline based macro program. It permits the user to create macros that run on multiple threads.
 
-### Design
-
-Open `keytime.free` in [Lunacy](https://icons8.com/lunacy). The design is speced for 1280 x 960 px though, percentages were used, so the final product will look good.
-
 ### Langauge
 
 KeyTime comes with an inbuild language, keytime.
@@ -30,10 +26,10 @@ macro 0
 	; Keys 'e' and 'y' are automatically unpressed.
 ```
 
-Variables will have the following syntax and can only be used with `sleep`.
+Variables have the following syntax and can only be used with `sleep`.
 
 ```keytime
-time = 500 ; Create a variable named 'time' with value 500. The value is accessed via $time
+time: 500 ; Create a variable named 'time' with value 500. The value is accessed via $time
 ; Defines macro 0, which will press 'K' for 500ms.
 macro 0
  press K
