@@ -54,27 +54,72 @@ namespace KeyTime
     public static class Keyboard
     {
         [DllImport("user32.dll", SetLastError = true)]
-        static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, UIntPtr dwExtraInfo);
+        static extern uint SendInput(uint nInputs, INPUT[] pInputs, int cbSize);
 
-        private const int KEYEVENTF_KEYUP = 0x0002;
+        [DllImport("user32.dll")]
+        static extern uint MapVirtualKey(uint uCode, uint uMapType);
 
-        // Holds all currently pressed keys
+        [StructLayout(LayoutKind.Sequential)]
+        struct INPUT
+        {
+            public uint type;
+            public InputUnion U;
+            public static int Size => Marshal.SizeOf(typeof(INPUT));
+        }
+
+        [StructLayout(LayoutKind.Explicit)]
+        struct InputUnion
+        {
+            [FieldOffset(0)]
+            public MOUSEINPUT mi;
+            [FieldOffset(0)]
+            public KEYBDINPUT ki;
+            [FieldOffset(0)]
+            public HARDWAREINPUT hi;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        struct KEYBDINPUT
+        {
+            public ushort wVk;
+            public ushort wScan;
+            public uint dwFlags;
+            public uint time;
+            public UIntPtr dwExtraInfo;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        struct MOUSEINPUT
+        {
+            public int dx;
+            public int dy;
+            public uint mouseData;
+            public uint dwFlags;
+            public uint time;
+            public UIntPtr dwExtraInfo;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        struct HARDWAREINPUT
+        {
+            public uint uMsg;
+            public ushort wParamL;
+            public ushort wParamH;
+        }
+
+        private const uint INPUT_KEYBOARD = 1;
+        private const uint KEYEVENTF_KEYUP = 0x0002;
+        private const uint KEYEVENTF_UNICODE = 0x0004;
+        private const uint KEYEVENTF_SCANCODE = 0x0008;
+
         private static readonly HashSet<byte> pressedKeys = new HashSet<byte>();
-
-        // Background worker thread
         private static readonly Thread repeatThread;
         private static bool running = true;
-
-        // Key repeat rate (ms)
         private static int repeatDelayMs = 10;
 
         static Keyboard()
         {
-            // Start the background thread
-            repeatThread = new Thread(RepeatLoop)
-            {
-                IsBackground = true
-            };
+            repeatThread = new Thread(RepeatLoop) { IsBackground = true };
             repeatThread.Start();
         }
 
@@ -86,11 +131,34 @@ namespace KeyTime
                 {
                     foreach (var key in pressedKeys)
                     {
-                        keybd_event(key, 0, 0, UIntPtr.Zero); // Simulate key-down repeat
+                        SendKeyEvent(key, false);
                     }
                 }
                 Thread.Sleep(repeatDelayMs);
             }
+        }
+
+        private static void SendKeyEvent(byte keyCode, bool keyUp)
+        {
+            ushort scanCode = (ushort)MapVirtualKey(keyCode, 0);
+
+            INPUT input = new INPUT
+            {
+                type = INPUT_KEYBOARD,
+                U = new InputUnion
+                {
+                    ki = new KEYBDINPUT
+                    {
+                        wVk = keyCode,
+                        wScan = scanCode,
+                        dwFlags = keyUp ? KEYEVENTF_KEYUP : 0,
+                        time = 0,
+                        dwExtraInfo = UIntPtr.Zero
+                    }
+                }
+            };
+
+            SendInput(1, new INPUT[] { input }, INPUT.Size);
         }
 
         public static void PressKey(byte keyCode)
@@ -100,7 +168,7 @@ namespace KeyTime
                 if (!pressedKeys.Contains(keyCode))
                 {
                     pressedKeys.Add(keyCode);
-                    keybd_event(keyCode, 0, 0, UIntPtr.Zero); // Initial key down
+                    SendKeyEvent(keyCode, false);
                 }
             }
         }
@@ -112,15 +180,16 @@ namespace KeyTime
                 if (pressedKeys.Contains(keyCode))
                 {
                     pressedKeys.Remove(keyCode);
-                    keybd_event(keyCode, 0, KEYEVENTF_KEYUP, UIntPtr.Zero); // Key up
+                    SendKeyEvent(keyCode, true);
                 }
             }
         }
 
         public static void TapKey(byte keyCode)
         {
-            PressKey(keyCode);
-            ReleaseKey(keyCode);
+            SendKeyEvent(keyCode, false);
+            Thread.Sleep(50);
+            SendKeyEvent(keyCode, true);
         }
 
         public static byte CharToVirtualKey(char c)
@@ -132,6 +201,11 @@ namespace KeyTime
             if (c >= '0' && c <= '9')
                 return (byte)c;
             return 0;
+        }
+
+        public static void Shutdown()
+        {
+            running = false;
         }
     }
 }
