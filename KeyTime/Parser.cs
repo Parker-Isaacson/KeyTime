@@ -88,10 +88,11 @@ namespace KeyTime
                     {
                         i++;
                     }
+                    continue;
                 }
 
                 // User gave something bad
-                throw new ParseException($"Error, bad char \'{text[i]}\'.");
+                throw new ParseException(@$"Error, bad char \'{text[i]}\'.");
             }
             CheckTokens();
             CleanKeys();
@@ -168,6 +169,7 @@ namespace KeyTime
                             };
                         }
                         break;
+                    case "wait":
                     case "sleep":
                         if ( int.TryParse(param, out int time) )
                         {
