@@ -26,7 +26,7 @@ namespace KeyTime
 
     public class Parser
     {
-        private Dictionary<String, Action> macros = new Dictionary<String, Action>();
+        public Dictionary<String, Action> macros { get; } = new Dictionary<String, Action>();
         private Dictionary<String, String> vars = new Dictionary<String, String>();
         private Stack<String> tokens = new Stack<String>();
         private HashSet<byte> pressed = new HashSet<byte>();
@@ -205,7 +205,5 @@ namespace KeyTime
                 };
             }
         }
-
-        public Dictionary<String, Action> GetMacros() { return macros; }
     }
 }

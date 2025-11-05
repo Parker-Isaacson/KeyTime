@@ -1,6 +1,7 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
+using Timeline;
 
 namespace KeyTime
 {
@@ -13,6 +14,7 @@ namespace KeyTime
         {
             PercisionTimer.InitHighResolution(); // High resolution clock for this process runtime, will be turned off later.
             InitializeComponent();
+            UpdateView();
         }
 
         protected override void OnFormClosed(FormClosedEventArgs e)
@@ -113,7 +115,7 @@ namespace KeyTime
             Dictionary<String, Action> macros;
             try
             {
-                macros = parsed.GetMacros();
+                macros = parsed.macros;
             }
             catch
             {
@@ -140,6 +142,118 @@ namespace KeyTime
             else
             {
                 resultsLabel.Text = $"Startup time remains {startupTime}ms.";
+            }
+        }
+
+        private void menuTimelineAddTrack_Click(object sender, EventArgs e)
+        {
+            timelineControl.AddTrack();
+        }
+
+        private void menuTimelineRemoveFirst_Click(object sender, EventArgs e)
+        {
+            if (timelineControl.Controls.OfType<Panel>().Any())
+            {
+                timelineControl.RemoveTrack(0);
+                resultsLabel.Text = "Removed First Track.";
+            }
+            else
+            {
+                resultsLabel.Text = "Could not remove First Track.";
+            }
+        }
+
+        private void menuTimelineRemoveLast_Click(object sender, EventArgs e)
+        {
+            if (timelineControl.Controls.OfType<Panel>().Any())
+            {
+                int lastIndex = timelineControl.Controls.OfType<Panel>().Count() - 1;
+                timelineControl.RemoveTrack(lastIndex);
+                resultsLabel.Text = "Removed Last Track.";
+            }
+            else
+            {
+                resultsLabel.Text = "Could not remove Last Track.";
+            }
+        }
+
+        private void menuTimelineRemoveIndex_Click(object sender, EventArgs e)
+        {
+            string value = InputDialog.Show($"Tracks are 0 indexed.\nRemove Track at index:");
+            if (value != null && int.TryParse(value, out int trackIndex))
+            {
+                timelineControl.RemoveTrack(trackIndex);
+                resultsLabel.Text = $"Removed track at {trackIndex}.";
+            }
+            else
+            {
+                resultsLabel.Text = $"Could not remove track at {value}.";
+            }
+        }
+
+        private void menuTimelineConvert_Click(object sender, EventArgs e)
+        {
+            // TODO: Build this
+            resultsLabel.Text = $"Cannot Convert to Code.";
+        }
+
+        private void menuViewToggleCode_Click(object sender, EventArgs e)
+        {
+            txtMainView.Visible = !txtMainView.Visible;
+            UpdateView();
+        }
+
+        private void menuViewToggleTimeline_Click(object sender, EventArgs e)
+        {
+            groupTimeline.Visible = !groupTimeline.Visible;
+            UpdateView();
+        }
+
+        private void UpdateView()
+        {
+            int padding = 10;
+            int totalWidth = this.ClientSize.Width;
+
+            int leftWidth = (int)(totalWidth * 0.2) - (padding / 2);
+            int rightWidth = (int)(totalWidth * 0.8) - (padding / 2);
+            
+            // Case 1: Both visible
+            if (txtMainView.Visible && groupTimeline.Visible)
+            {
+                // --- Left panel ---
+                txtMainView.Left = padding;
+                txtMainView.Width = leftWidth;
+
+                // Keep existing Top & Height
+                // Anchors: all except Right (so it stays fixed on left)
+                txtMainView.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left;
+
+                // --- Right panel ---
+                groupTimeline.Left = txtMainView.Right + padding;
+                groupTimeline.Width = rightWidth;
+
+                // Anchors: all except Left (so it stays fixed on right)
+                groupTimeline.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Right;
+            }
+
+            // Case 2: Only left visible
+            else if (txtMainView.Visible && !groupTimeline.Visible)
+            {
+                txtMainView.Left = padding;
+                txtMainView.Width = totalWidth - (2 * padding);
+
+                // Full anchors so it resizes with form
+                txtMainView.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            }
+
+            // Case 3: Only right visible
+            else if (!txtMainView.Visible && groupTimeline.Visible)
+            {
+                groupTimeline.Left = padding;
+                groupTimeline.Width = totalWidth - (2 * padding);
+
+                // Full anchors so it resizes with form
+                groupTimeline.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             }
         }
     }
