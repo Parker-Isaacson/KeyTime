@@ -35,6 +35,9 @@
             menuFileOpen = new ToolStripMenuItem();
             menuFileSave = new ToolStripMenuItem();
             menuFileSaveAs = new ToolStripMenuItem();
+            menuView = new ToolStripMenuItem();
+            menuViewToggleCode = new ToolStripMenuItem();
+            menuViewToggleTimeline = new ToolStripMenuItem();
             menuParse = new ToolStripMenuItem();
             menuParseParse = new ToolStripMenuItem();
             menuParseRunMacros = new ToolStripMenuItem();
@@ -48,9 +51,6 @@
             resultsLabel = new Label();
             groupTimeline = new GroupBox();
             timelineControl = new Timeline.TimelineControl();
-            menuView = new ToolStripMenuItem();
-            menuViewToggleCode = new ToolStripMenuItem();
-            menuViewToggleTimeline = new ToolStripMenuItem();
             menuMain.SuspendLayout();
             groupTimeline.SuspendLayout();
             SuspendLayout();
@@ -108,6 +108,27 @@
             menuFileSaveAs.Size = new Size(194, 22);
             menuFileSaveAs.Text = "Save As Ctrl + Shift + S";
             menuFileSaveAs.Click += menuFileSaveAs_Click;
+            // 
+            // menuView
+            // 
+            menuView.DropDownItems.AddRange(new ToolStripItem[] { menuViewToggleCode, menuViewToggleTimeline });
+            menuView.Name = "menuView";
+            menuView.Size = new Size(44, 20);
+            menuView.Text = "View";
+            // 
+            // menuViewToggleCode
+            // 
+            menuViewToggleCode.Name = "menuViewToggleCode";
+            menuViewToggleCode.Size = new Size(159, 22);
+            menuViewToggleCode.Text = "Toggle Code";
+            menuViewToggleCode.Click += menuViewToggleCode_Click;
+            // 
+            // menuViewToggleTimeline
+            // 
+            menuViewToggleTimeline.Name = "menuViewToggleTimeline";
+            menuViewToggleTimeline.Size = new Size(159, 22);
+            menuViewToggleTimeline.Text = "Toggle Timeline";
+            menuViewToggleTimeline.Click += menuViewToggleTimeline_Click;
             // 
             // menuParse
             // 
@@ -185,9 +206,9 @@
             resultsLabel.AutoSize = true;
             resultsLabel.Location = new Point(8, 437);
             resultsLabel.Name = "resultsLabel";
-            resultsLabel.Size = new Size(39, 15);
+            resultsLabel.Size = new Size(257, 15);
             resultsLabel.TabIndex = 3;
-            resultsLabel.Text = "Status";
+            resultsLabel.Text = "The status of commands will be displayed here.";
             // 
             // groupTimeline
             // 
@@ -209,27 +230,6 @@
             timelineControl.Name = "timelineControl";
             timelineControl.Size = new Size(462, 382);
             timelineControl.TabIndex = 0;
-            // 
-            // menuView
-            // 
-            menuView.DropDownItems.AddRange(new ToolStripItem[] { menuViewToggleCode, menuViewToggleTimeline });
-            menuView.Name = "menuView";
-            menuView.Size = new Size(44, 20);
-            menuView.Text = "View";
-            // 
-            // menuViewToggleCode
-            // 
-            menuViewToggleCode.Name = "menuViewToggleCode";
-            menuViewToggleCode.Size = new Size(180, 22);
-            menuViewToggleCode.Text = "Toggle Code";
-            menuViewToggleCode.Click += menuViewToggleCode_Click;
-            // 
-            // menuViewToggleTimeline
-            // 
-            menuViewToggleTimeline.Name = "menuViewToggleTimeline";
-            menuViewToggleTimeline.Size = new Size(180, 22);
-            menuViewToggleTimeline.Text = "Toggle Timeline";
-            menuViewToggleTimeline.Click += menuViewToggleTimeline_Click;
             // 
             // KeyTime
             // 

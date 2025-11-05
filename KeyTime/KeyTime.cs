@@ -216,7 +216,7 @@ namespace KeyTime
 
             int leftWidth = (int)(totalWidth * 0.2) - (padding / 2);
             int rightWidth = (int)(totalWidth * 0.8) - (padding / 2);
-            
+
             // Case 1: Both visible
             if (txtMainView.Visible && groupTimeline.Visible)
             {

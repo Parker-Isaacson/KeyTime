@@ -14,7 +14,6 @@ namespace KeyTime
 
         public String? GetFileText() { return _fileText; }
     }
-
     public static class PercisionTimer
     {
         [DllImport("winmm.dll", EntryPoint = "timeBeginPeriod")]

@@ -13,7 +13,7 @@ KeyTime comes with an inbuild language, keytime.
 ; press <key(s)> ; Keys can be a list of keys like KEY and keys 'k', 'e', and 'y' will be pressed.
 ; unpress <key(s)> ; Keys can be a list of keys like KEY and keys 'k', 'e', and 'y' will be unpressed.
 ; tap <key(s)> ; Keys can be a list of keys like KEY and keys 'k', 'e', and 'y' will be tapped, in order.
-; sleep <time> ; The time value is in milliseconds.
+; sleep ( or wait ) <time> ; The time value is in milliseconds.
 ; macro <id> ; Defines a new macro.
 
 ; Keys that are still pressed at the end of a macro will be unpressed automatically.
@@ -23,7 +23,7 @@ macro 0
  sleep 500
  unpress K
  tap Q
-	; Keys 'e' and 'y' are automatically unpressed.
+ ; Keys 'e' and 'y' are automatically unpressed.
 ```
 
 Variables have the following syntax and can only be used with `sleep`.
@@ -37,6 +37,6 @@ macro 0
  unpress K
 ```
 
-### Behind-The-Scenes
+### Timeline Tool
 
-Threads and there respective list of commands are assigned a 32 bit number as for very fast lookup via a Dictionary. The top 6 bits are reserved for the thread number, the remaining 26 are reserved for the command index.
+The timeline tool should allow for easier building of macros, though will not allow for overlap. It has the ability to convert itself to code for quick saving, and will be able to be loaded from that same code. Though this does not all code can be loaded, if keys have overlap then it will not be possible to load.
