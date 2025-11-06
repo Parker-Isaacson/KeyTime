@@ -251,7 +251,7 @@ namespace KeyTime
             {
                 resultsLabel.Text = $"Could not make timeline of length {value}.";
             }
-            
+
         }
 
         private void menuTimelineConvert_Click(object sender, EventArgs e)
@@ -280,12 +280,27 @@ namespace KeyTime
                     {
                         resultsLabel.Text = "Error, could not convert!";
                     }
-                        txtMainView.Text += $" press {clipData.Character}\r\n sleep {clipData.EndTime - clipData.StartTime}\r\n unpress {clipData.Character}\r\n";
+                    txtMainView.Text += $" press {clipData.Character}\r\n sleep {clipData.EndTime - clipData.StartTime}\r\n unpress {clipData.Character}\r\n";
                     currentTime = clipData.EndTime;
                 }
                 txtMainView.Text += "\r\n";
             }
-            resultsLabel.Text = "Converted to Code!";
+            menuParseParse_Click(sender, e);
+            resultsLabel.Text = "Converted to code, and parsed.";
+        }
+
+        private void menuParseConvert_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                TimelineParser parsedMacros = new TimelineParser(new Data(txtMainView.Text));
+                timelineControl.LoadTimelineData(parsedMacros.timelines);
+                resultsLabel.Text = "Converted to a timeline successfully.";
+            }
+            catch (ParseException ex)
+            {
+                resultsLabel.Text = $"Conversion Failed: {ex.Message}";
+            }
         }
     }
 }

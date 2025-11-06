@@ -137,6 +137,11 @@ namespace Timeline
         // Import data
         public void LoadTimelineData(List<TimelineData> tracks)
         {
+            // --- Stop layout and drawing while rebuilding
+            SuspendLayout();
+            AutoScroll = false;
+
+            // --- Clear existing tracks
             Controls.Clear();
 
             foreach (var trackData in tracks.OrderBy(t => t.TrackIndex))
@@ -155,7 +160,6 @@ namespace Timeline
 
                 track.MouseDown += Track_MouseDown;
                 track.MouseUp += Track_MouseUp_Delete;
-                Controls.Add(track);
 
                 foreach (var clipData in trackData.Clips)
                 {
@@ -168,7 +172,22 @@ namespace Timeline
                     Panel clip = BuildClipPanel(data);
                     track.Controls.Add(clip);
                 }
+
+                Controls.Add(track);
             }
+
+            AutoScroll = true;
+            ResumeLayout(true);
+
+            PerformLayout();
+            Invalidate(true);
+            Update();
+
+            // optional: ensure all tracks are visible in scroll area
+            AutoScrollMinSize = new Size(2000, TopMargin + tracks.Count * 65);
+
+            AddTrack();
+            RemoveTrack(Controls.OfType<Panel>().Count() - 1);
         }
 
         // Click empty background, add track

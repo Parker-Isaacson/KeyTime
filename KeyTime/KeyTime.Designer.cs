@@ -144,6 +144,7 @@
             menuParseConvert.Name = "menuParseConvert";
             menuParseConvert.Size = new Size(186, 22);
             menuParseConvert.Text = "Convert To Timeline";
+            menuParseConvert.Click += menuParseConvert_Click;
             // 
             // menuParseParse
             // 

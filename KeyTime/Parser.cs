@@ -14,6 +14,7 @@ using System.Threading.Tasks;
 using System.Timers;
 using System.Windows.Forms;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.TaskbarClock;
+using Timeline;
 
 namespace KeyTime
 {
@@ -123,13 +124,13 @@ namespace KeyTime
                 String op = tokens.Pop().ToLower();
                 
                 // We need to do a var check on op and change it just in case
-                if (op.EndsWith(":"))
+                if (op.EndsWith(':'))
                 {
                     vars[op.Substring(0, op.Length - 1)] = param;
                     return;
                 }
 
-                if (param.StartsWith("$"))
+                if (param.StartsWith('$'))
                 {
                     param = vars[param.Substring(1)];
                 }
@@ -203,6 +204,169 @@ namespace KeyTime
                     Debug.WriteLine($"Unhandled key: {key}, automatically unpressing.");
                     Keyboard.ReleaseKey(key);
                 };
+            }
+        }
+    }
+
+    public class TimelineParser
+    {
+        public List<TimelineControl.TimelineData> timelines { get; } = new();
+        private Dictionary<String, String> vars = new Dictionary<String, String>();
+        private Stack<String> tokens = new Stack<String>();
+
+        private int currentTrack = -1;
+        private int currentClip = -1;
+        private int currentTime = 0;
+
+        public TimelineParser(Data formData)
+        {
+            String? text = formData.GetFileText();
+            if (String.IsNullOrEmpty(text))
+            {
+                throw new ParseException("Error, no text passed in.");
+            }
+            ParseText(text);
+        }
+
+        private void ParseText(String text)
+        {
+            for (int i = 0; i < text.Length; i++)
+            {
+                CheckTokens();
+                // Trim
+                if (Char.IsWhiteSpace(text[i]))
+                {
+                    continue;
+                }
+
+                // String Constant, in [a-zA-z\_\-\:]
+                if (Char.IsLetter(text[i]) || text[i] == '_' || text[i] == '-' || text[i] == ':' || text[i] == '$')
+                {
+                    String buffer = String.Empty;
+                    while (i < text.Length && (Char.IsLetter(text[i]) || text[i] == '_' || text[i] == '-' || text[i] == ':' || text[i] == '$'))
+                    {
+                        buffer += text[i];
+                        i++;
+                    }
+                    i--;
+                    tokens.Push(buffer.ToLower());
+                    continue;
+                }
+
+                // Numeric Constant, in [0-9\.]
+                if (Char.IsDigit(text[i]))
+                {
+                    String buffer = String.Empty;
+                    while (i < text.Length && Char.IsDigit(text[i]))
+                    {
+                        buffer += text[i];
+                        i++;
+                    }
+                    i--;
+                    tokens.Push(buffer.ToLower());
+                    continue;
+                }
+
+                // Consume Comments
+                if (text[i] == ';')
+                {
+                    while (i < text.Length && text[i] != '\n')
+                    {
+                        i++;
+                    }
+                    continue;
+                }
+
+                // User gave something bad
+                throw new ParseException(@$"Error, bad char \'{text[i]}\'.");
+            }
+            CheckTokens();
+
+            if (tokens.Count != 0)
+            {
+                throw new ParseException($"Error, ended with extra tokens.");
+            }
+        }
+
+        private void CheckTokens()
+        {
+            // We can ignore, assume there will be more later!
+            if (tokens.Count < 2)
+            {
+                return;
+            }
+
+            // We found too many valid tokens
+            if (tokens.Count > 2)
+            {
+                throw new ParseException($"Error, to many tokens in the stream.");
+            }
+
+            // We found just enough valid tokens
+            if (tokens.Count == 2)
+            {
+                String param = tokens.Pop().ToLower();
+                String op = tokens.Pop().ToLower();
+
+                // We need to do a var check on op and change it just in case
+                if (op.EndsWith(':'))
+                {
+                    vars[op.Substring(0, op.Length - 1)] = param;
+                    return;
+                }
+
+                if (param.StartsWith('$'))
+                {
+                    param = vars[param.Substring(1)];
+                }
+
+                switch (op)
+                {
+                    /*
+                     * Since the macros must be `press` -> `sleep` -> `unpress`, we must assume that they exist
+                     */
+                    case "press":
+                        timelines[currentTrack].Clips.Add(new TimelineControl.ClipData
+                        {
+                            Character = param,
+                            StartTime = currentTime,
+                            EndTime = currentTime // Default as needed
+                        });
+                        currentClip += 1;
+                        break;
+                    case "unpress":
+                        timelines[currentTrack].Clips[currentClip].EndTime = currentTime;
+                        break;
+                    case "tap":
+                        timelines[currentTrack].Clips.Add(new TimelineControl.ClipData
+                        {
+                            Character = param,
+                            StartTime = currentTime,
+                            EndTime = currentTime + 50
+                        });
+                        currentClip += 1;
+                        currentTime += 50;
+                        break;
+                    case "wait":
+                    case "sleep":
+                        if (int.TryParse(param, out int time))
+                        {
+                            currentTime += time;
+                        }
+                        else
+                        {
+                            throw new ParseException($"Error, {param} cannot be cast to Int.");
+                        }
+                        break;
+                    case "macro":
+                        timelines.Add(new TimelineControl.TimelineData { });
+                        currentTrack += 1;
+                        currentClip = -1;
+                        currentTime = 0;
+                        break;
+                    default:
+                        throw new ParseException($"Error, bad token {op} was found.");
+                }
             }
         }
     }
