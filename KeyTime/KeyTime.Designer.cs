@@ -39,6 +39,7 @@
             menuViewToggleCode = new ToolStripMenuItem();
             menuViewToggleTimeline = new ToolStripMenuItem();
             menuParse = new ToolStripMenuItem();
+            menuParseConvert = new ToolStripMenuItem();
             menuParseParse = new ToolStripMenuItem();
             menuParseRunMacros = new ToolStripMenuItem();
             menuParseStartup = new ToolStripMenuItem();
@@ -48,6 +49,7 @@
             menuTimelineRemoveFirst = new ToolStripMenuItem();
             menuTimelineRemoveLast = new ToolStripMenuItem();
             menuTimelineRemoveIndex = new ToolStripMenuItem();
+            menuTimelineChangeWidth = new ToolStripMenuItem();
             resultsLabel = new Label();
             groupTimeline = new GroupBox();
             timelineControl = new Timeline.TimelineControl();
@@ -61,7 +63,7 @@
             txtMainView.Location = new Point(8, 27);
             txtMainView.Multiline = true;
             txtMainView.Name = "txtMainView";
-            txtMainView.ScrollBars = ScrollBars.Both;
+            txtMainView.ScrollBars = ScrollBars.Vertical;
             txtMainView.Size = new Size(243, 407);
             txtMainView.TabIndex = 1;
             // 
@@ -132,10 +134,16 @@
             // 
             // menuParse
             // 
-            menuParse.DropDownItems.AddRange(new ToolStripItem[] { menuParseParse, menuParseRunMacros, menuParseStartup });
+            menuParse.DropDownItems.AddRange(new ToolStripItem[] { menuParseConvert, menuParseParse, menuParseRunMacros, menuParseStartup });
             menuParse.Name = "menuParse";
             menuParse.Size = new Size(47, 20);
             menuParse.Text = "Parse";
+            // 
+            // menuParseConvert
+            // 
+            menuParseConvert.Name = "menuParseConvert";
+            menuParseConvert.Size = new Size(186, 22);
+            menuParseConvert.Text = "Convert To Timeline";
             // 
             // menuParseParse
             // 
@@ -160,7 +168,7 @@
             // 
             // menuTimeline
             // 
-            menuTimeline.DropDownItems.AddRange(new ToolStripItem[] { menuTimelineConvert, menuTimelineAddTrack, menuTimelineRemoveFirst, menuTimelineRemoveLast, menuTimelineRemoveIndex });
+            menuTimeline.DropDownItems.AddRange(new ToolStripItem[] { menuTimelineConvert, menuTimelineAddTrack, menuTimelineRemoveFirst, menuTimelineRemoveLast, menuTimelineRemoveIndex, menuTimelineChangeWidth });
             menuTimeline.Name = "menuTimeline";
             menuTimeline.Size = new Size(65, 20);
             menuTimeline.Text = "Timeline";
@@ -199,6 +207,13 @@
             menuTimelineRemoveIndex.Size = new Size(192, 22);
             menuTimelineRemoveIndex.Text = "Remove Track at Index";
             menuTimelineRemoveIndex.Click += menuTimelineRemoveIndex_Click;
+            // 
+            // menuTimelineChangeWidth
+            // 
+            menuTimelineChangeWidth.Name = "menuTimelineChangeWidth";
+            menuTimelineChangeWidth.Size = new Size(192, 22);
+            menuTimelineChangeWidth.Text = "Change Width";
+            menuTimelineChangeWidth.Click += menuTimelineChangeWidth_Click;
             // 
             // resultsLabel
             // 
@@ -274,5 +289,7 @@
         private ToolStripMenuItem menuView;
         private ToolStripMenuItem menuViewToggleCode;
         private ToolStripMenuItem menuViewToggleTimeline;
+        private ToolStripMenuItem menuParseConvert;
+        private ToolStripMenuItem menuTimelineChangeWidth;
     }
 }

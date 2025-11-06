@@ -21,6 +21,9 @@ namespace Timeline
         private Point createStart;
         private Panel? previewClip;
 
+        private const int MinClipWidth = 20;
+        private int dragOffsetX;
+
         public TimelineControl()
         {
             AutoScroll = true;
@@ -75,6 +78,33 @@ namespace Timeline
             Invalidate();
         }
 
+        // Sets up a new width
+        public void SetTimelineWidth(int newWidth)
+        {
+            if (newWidth < 100) newWidth = 100; // safety minimum
+
+            foreach (Panel track in Controls.OfType<Panel>())
+            {
+                track.Width = newWidth;
+
+                // Clamp clip positions and sizes if they go beyond new width
+                foreach (Panel clip in track.Controls.OfType<Panel>())
+                {
+                    if (clip.Left + clip.Width > newWidth)
+                    {
+                        // shrink clip if needed
+                        clip.Width = Math.Max(10, newWidth - clip.Left);
+                        if (clip.Tag is TimelineClip data)
+                        {
+                            data.EndTime = data.StartTime + clip.Width;
+                        }
+                    }
+                }
+            }
+
+            Invalidate(); // Redraw time ruler
+        }
+
         // Export data
         public List<TimelineData> GetTimelineData()
         {
@@ -87,6 +117,9 @@ namespace Timeline
                     TrackIndex = (int)track.Tag,
                     Clips = track.Controls.OfType<Panel>()
                         .Select(c => (TimelineClip)c.Tag)
+                        .Where(c => c != null)!
+                        .OrderBy(c => c!.StartTime)
+                        .ThenBy(c => c!.EndTime)
                         .Select(c => new ClipData
                         {
                             Character = c.Character,
@@ -281,6 +314,8 @@ namespace Timeline
         {
             selectedClip = (Panel)sender!;
             dragStart = e.Location;
+            dragOffsetX = e.X;
+
             isDragging = false;
             isResizingLeft = false;
             isResizingRight = false;
@@ -298,28 +333,35 @@ namespace Timeline
         // Drag / resize / cursor feedback
         private void Clip_MouseMove(object? sender, MouseEventArgs e)
         {
-            Panel clip = (Panel)sender!;
+            var clip = (Panel)sender!;
 
+            // cursor feedback when idle
             if (!isDragging && !isResizingLeft && !isResizingRight)
             {
                 clip.Cursor = (e.X <= ResizeMargin || e.X >= clip.Width - ResizeMargin)
                     ? Cursors.SizeWE
                     : Cursors.Default;
+                return;
             }
 
             if (selectedClip == null) return;
-            Panel track = (Panel)selectedClip.Parent!;
+            var track = (Panel)selectedClip.Parent!;
             if (selectedClip.Tag is not TimelineClip data) return;
+
+            // Mouse X in TRACK coordinates (stable reference frame)
+            int mouseXInTrack = track.PointToClient(Cursor.Position).X;
 
             if (isDragging)
             {
-                int deltaX = e.X - dragStart.X;
-                int newLeft = Math.Clamp(selectedClip.Left + deltaX, 0, track.Width - selectedClip.Width);
+                // keep the mouse anchored at the same offset inside the clip
+                int newLeft = mouseXInTrack - dragOffsetX;
 
-                bool overlap = track.Controls.OfType<Panel>()
-                    .Where(c => c != selectedClip)
-                    .Any(c => newLeft < c.Left + c.Width && newLeft + selectedClip.Width > c.Left);
-                if (overlap) return;
+                // clamp to track
+                newLeft = Math.Clamp(newLeft, 0, track.Width - selectedClip.Width);
+
+                // test overlap with others at the new rect
+                var newRect = new Rectangle(newLeft, selectedClip.Top, selectedClip.Width, selectedClip.Height);
+                if (IntersectsAny(track, newRect, selectedClip)) return;
 
                 selectedClip.Left = newLeft;
                 data.StartTime = newLeft;
@@ -327,36 +369,31 @@ namespace Timeline
             }
             else if (isResizingLeft)
             {
-                int deltaX = e.X - dragStart.X;
-                int newLeft = selectedClip.Left + deltaX;
-                int newWidth = selectedClip.Width - deltaX;
-                if (newLeft < 0 || newWidth < 20) return;
+                // left edge follows mouse, but keep ≥ MinClipWidth
+                int maxLeft = selectedClip.Right - MinClipWidth;
+                int newLeft = Math.Clamp(mouseXInTrack, 0, maxLeft);
+                int newWidth = selectedClip.Right - newLeft;
 
-                bool overlap = track.Controls.OfType<Panel>()
-                    .Where(c => c != selectedClip)
-                    .Any(c => newLeft < c.Left + c.Width && newLeft + newWidth > c.Left);
-                if (overlap) return;
+                var newRect = new Rectangle(newLeft, selectedClip.Top, newWidth, selectedClip.Height);
+                if (IntersectsAny(track, newRect, selectedClip)) return;
 
                 selectedClip.Left = newLeft;
                 selectedClip.Width = newWidth;
                 data.StartTime = newLeft;
                 data.EndTime = newLeft + newWidth;
-                dragStart = e.Location;
             }
             else if (isResizingRight)
             {
-                int deltaX = e.X - dragStart.X;
-                int newWidth = selectedClip.Width + deltaX;
-                if (newWidth < 20) return;
+                // right edge follows mouse, but keep ≥ MinClipWidth
+                int minRight = selectedClip.Left + MinClipWidth;
+                int newRight = Math.Clamp(mouseXInTrack, minRight, track.Width);
+                int newWidth = newRight - selectedClip.Left;
 
-                bool overlap = track.Controls.OfType<Panel>()
-                    .Where(c => c != selectedClip)
-                    .Any(c => selectedClip.Left < c.Left + c.Width && selectedClip.Left + newWidth > c.Left);
-                if (overlap) return;
+                var newRect = new Rectangle(selectedClip.Left, selectedClip.Top, newWidth, selectedClip.Height);
+                if (IntersectsAny(track, newRect, selectedClip)) return;
 
                 selectedClip.Width = newWidth;
                 data.EndTime = data.StartTime + newWidth;
-                dragStart = e.Location;
             }
 
             UpdateClipText(selectedClip);
@@ -372,7 +409,7 @@ namespace Timeline
             ((Panel)sender!).Cursor = Cursors.Default;
         }
 
-        // Double-click → edit clip
+        // Double-click, edit clip
         private void Clip_DoubleClick(object? sender, EventArgs e)
         {
             if (sender is not Panel clip || clip.Tag is not TimelineClip data) return;
@@ -420,7 +457,7 @@ namespace Timeline
             }
         }
 
-        // Right-click clip → delete it
+        // Right-click clip, delete it
         private void Clip_MouseUp_Delete(object? sender, MouseEventArgs e)
         {
             if (e.Button != MouseButtons.Right || sender is not Panel clip) return;
@@ -431,6 +468,17 @@ namespace Timeline
             {
                 track.Controls.Remove(clip);
             }
+        }
+
+        private static bool IntersectsAny(Panel track, Rectangle rect, Panel? except = null)
+        {
+            foreach (var c in track.Controls.OfType<Panel>())
+            {
+                if (c == except) continue;
+                var r = new Rectangle(c.Left, c.Top, c.Width, c.Height);
+                if (r.IntersectsWith(rect)) return true;
+            }
+            return false;
         }
 
         protected override void OnPaint(PaintEventArgs e)

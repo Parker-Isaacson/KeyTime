@@ -191,12 +191,6 @@ namespace KeyTime
             }
         }
 
-        private void menuTimelineConvert_Click(object sender, EventArgs e)
-        {
-            // TODO: Build this
-            resultsLabel.Text = $"Cannot Convert to Code.";
-        }
-
         private void menuViewToggleCode_Click(object sender, EventArgs e)
         {
             txtMainView.Visible = !txtMainView.Visible;
@@ -217,44 +211,81 @@ namespace KeyTime
             int leftWidth = (int)(totalWidth * 0.2) - (padding / 2);
             int rightWidth = (int)(totalWidth * 0.8) - (padding / 2);
 
-            // Case 1: Both visible
             if (txtMainView.Visible && groupTimeline.Visible)
             {
-                // --- Left panel ---
                 txtMainView.Left = padding;
                 txtMainView.Width = leftWidth;
 
-                // Keep existing Top & Height
-                // Anchors: all except Right (so it stays fixed on left)
                 txtMainView.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left;
 
-                // --- Right panel ---
                 groupTimeline.Left = txtMainView.Right + padding;
                 groupTimeline.Width = rightWidth;
 
-                // Anchors: all except Left (so it stays fixed on right)
                 groupTimeline.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Right;
             }
-
-            // Case 2: Only left visible
             else if (txtMainView.Visible && !groupTimeline.Visible)
             {
                 txtMainView.Left = padding;
                 txtMainView.Width = totalWidth - (2 * padding);
 
-                // Full anchors so it resizes with form
                 txtMainView.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             }
-
-            // Case 3: Only right visible
             else if (!txtMainView.Visible && groupTimeline.Visible)
             {
                 groupTimeline.Left = padding;
                 groupTimeline.Width = totalWidth - (2 * padding);
 
-                // Full anchors so it resizes with form
                 groupTimeline.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             }
+        }
+
+        private void menuTimelineChangeWidth_Click(object sender, EventArgs e)
+        {
+            string value = InputDialog.Show($"New Timeline width: ");
+            if (value != null && int.TryParse(value, out int width))
+            {
+                timelineControl.SetTimelineWidth(width);
+                resultsLabel.Text = $"Removed track at {width}.";
+            }
+            else
+            {
+                resultsLabel.Text = $"Could not make timeline of length {value}.";
+            }
+            
+        }
+
+        private void menuTimelineConvert_Click(object sender, EventArgs e)
+        {
+            if (!String.IsNullOrEmpty(txtMainView.Text))
+            {
+                string value = InputDialog.Show($"The current code will be cleared. Is this OK (Y/n):");
+                if (value != "Y")
+                    return;
+            }
+            resultsLabel.Text = "Generating Code...";
+            resultsLabel.Refresh();
+            txtMainView.Text = "";
+            List<TimelineControl.TimelineData> timelines = timelineControl.GetTimelineData();
+            foreach (TimelineControl.TimelineData data in timelines)
+            {
+                txtMainView.Text += $"macro {data.TrackIndex}\r\n";
+                int currentTime = 0;
+                foreach (TimelineControl.ClipData clipData in data.Clips)
+                {
+                    if (currentTime < clipData.StartTime)
+                    {
+                        txtMainView.Text += $" sleep {clipData.StartTime - currentTime}\r\n";
+                    }
+                    else if (currentTime < clipData.StartTime)
+                    {
+                        resultsLabel.Text = "Error, could not convert!";
+                    }
+                        txtMainView.Text += $" press {clipData.Character}\r\n sleep {clipData.EndTime - clipData.StartTime}\r\n unpress {clipData.Character}\r\n";
+                    currentTime = clipData.EndTime;
+                }
+                txtMainView.Text += "\r\n";
+            }
+            resultsLabel.Text = "Converted to Code!";
         }
     }
 }
