@@ -39,4 +39,14 @@ macro 0
 
 ### Timeline Tool
 
-The timeline tool should allow for easier building of macros, though will not allow for overlap. It has the ability to convert itself to code for quick saving, and will be able to be loaded from that same code. Though this does not all code can be loaded, if keys have overlap then it will not be possible to load.
+The timeline tool allow for easier building of macros. It can convert itself to code and back again. Below are the controls that can be used.
+
+| Control | What it does |
+| :--- | :--- |
+| Left click on `Timeline` | Create a new `Track` |
+| Left click on a `Track` | Create a new `Clip` |
+| Left click and drag on a `Track` | Create a new `Clip` with the length from the drag |
+| Left click and drag on an edge of a `Clip` | Resize the `Clip` |
+| Double left click on a `Clip` | Edit the values from the `Clip` |
+| Right click on a `Track` | Deletes the `Track` |
+| Right click on a `Clip` | Deletes the `Clip` |
